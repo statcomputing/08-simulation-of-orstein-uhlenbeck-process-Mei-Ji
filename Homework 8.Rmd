@@ -245,6 +245,81 @@ plot5
 ```
 
 
+# 5.3.4 Poisson Process
+
+## let $\lambda(t) = \sqrt{t} + e^{-t} \sin(2 \pi t)$ be the inensity function of possion process over $t \in [0, 5]$. Let M(t) be the number of events by time t.
+
+## 1. what is the distribution of N(5) and its parameter(s)? Use Mathematica or Maple for integration if needed.
+
+As we know that the intensity function of Poisson process over $t \in [0, 5]$ is $\lambda(t) = \sqrt{t} + e^{-t} \sin(2 \pi t)$. At time let, let $N(t)$ be the number of events.  
+
+By \[N(t+s)-N(t) \sim Poisson(\int_{t}^{t+s}\lambda(t)dt) \], we can have 
+\[N(5) \sim Poisson(\int_{0}^{5}(\sqrt{t} + e^{-t} \sin(2 \pi t) )dt)\]
+
+Thus, to calculate the integration we have:
+
+```{r}
+lam <- function (x){
+  sqrt(x) + exp(-x) *sin(2*pi*x)
+}
+
+integrate(lam,0,5)$value
+```
+```{r}
+lambda1 <- 7.607738
+library(ggplot2)
+plot <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))+
+  labs(x = 'x', y = 'Density', title='Distribution of N(5)', subtitle = 'lambda = 7.6077')
+fun.1 <- function(x) dpois(x,lambda = lambda1)
+plot + stat_function(fun = fun.1,col="steelblue") + xlim(0,100)
+```
+
+## 2. write a function to simulate from this Poisson process.
+
+To simulation of event times of a non homegeneous Poisson process with rate $\lambda(t)$ to time T, first for all $t \leq T$, we need to consider $\lambda$ such that $\lambda(t) \leq \lambda$ and at $t=0$,$k=0$, draw $r ~U(0,1)$. Then let $t=t-ln(r)/\lambda$, if we have $t>T$, stop and generate $s ~U(0,1)$, if we have $s\leq \frac{\lambda(t)}{\lambda}$ then $k=k+1$, $S(k)=t then we need to go back to draw $r ~U(0,1)$ again.
+
+```{r}
+simulate <- function(lambda,T){
+  t <-0
+  k <-0
+  sample <- double(0)
+  while(t < T) {
+    u <- runif(1,0,1)
+    if (u <= lam(t)/lambda) { 
+      sample <- append(sample, t)
+      k <- k + 1
+    }
+    t <- t - log(runif(1,0,1))/lambda
+  }
+  return(sample)
+}
+result <- double(10000)
+for(i in 1:10000){
+  result[i] <- length(simulate(15,5))
+}
+mean(result)
+
+```
+We choose the $\lambda=15$ , $T=5$ and simulate for 10000 times and the mean value is about 7.6 which is close to the integration result 7.6077.
+
+## 3. Generate events from this Poisson process 1000 times. Pool all the event points together as a sample and plot their kernel density. Overlay $\lambda(t)/\int_{0}^{5}\lambda(s)ds$ with the kernel density.
+
+```{r}
+result <- double(0)
+for(i in 1:1000){
+  result <- append(result,simulate(15,5))
+}
+plot1 <- ggplot(data.frame(x = result), aes(x = x))+ 
+  geom_density(colour ='blue',alpha=0.2)+
+  labs(x = 'r(t)',y = 'Density', title='Kernel and true density')
+fun.1 <- function(x) (sqrt(x) + exp(-x)*sin(2*pi*x))/7.607738
+plot1 + stat_function(fun = fun.1,col="red") + xlim(0,5)
+```
+ 
+ In the graph, the blue line is kernel density and red line is the true density.
+
+
+
 
 
 
